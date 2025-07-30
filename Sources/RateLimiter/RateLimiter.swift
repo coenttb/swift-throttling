@@ -6,12 +6,7 @@
 //
 
 import BoundedCache
-
-#if canImport(FoundationEssentials)
-import FoundationEssentials
-#elseif canImport(Foundation)
 import Foundation
-#endif
 
 /// A powerful, actor-based rate limiter providing multi-window rate limiting with exponential backoff.
 ///

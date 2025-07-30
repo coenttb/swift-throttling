@@ -1,8 +1,4 @@
-#if canImport(FoundationEssentials)
-import FoundationEssentials
-#elseif canImport(Foundation)
 import Foundation
-#endif
 @testable import RateLimiter
 import Testing
 
