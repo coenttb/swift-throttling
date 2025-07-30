@@ -1,0 +1,15 @@
+{
+  "originHash" : "13a273cf2eda6d8d88c7283ce1e95aca252bbd87d3f8cb958547eeef98bdddb4",
+  "pins" : [
+    {
+      "identity" : "swift-bounded-cache",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/coenttb/swift-bounded-cache",
+      "state" : {
+        "revision" : "f92b24d177506ae3f3c8a545bbabc380e1232ca6",
+        "version" : "0.0.1"
+      }
+    }
+  ],
+  "version" : 3
+}
