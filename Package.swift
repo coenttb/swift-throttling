@@ -3,33 +3,33 @@
 import PackageDescription
 
 extension String {
-    static let rateLimiter: Self = "RateLimiter"
+    static let throttling: Self = "Throttling"
 }
 
 extension Target.Dependency {
-    static var rateLimiter: Self { .target(name: .rateLimiter) }
+    static var throttling: Self { .target(name: .throttling) }
     static var boundedCache: Self { .product(name: "BoundedCache", package: "swift-bounded-cache") }
 }
 
 let package = Package(
-    name: "swift-ratelimiter",
+    name: "swift-throttling",
     products: [
-        .library(name: .rateLimiter, targets: [.rateLimiter])
+        .library(name: .throttling, targets: [.throttling])
     ],
     dependencies: [
         .package(url: "https://github.com/coenttb/swift-bounded-cache", from: "0.0.1"),
     ],
     targets: [
         .target(
-            name: .rateLimiter,
+            name: .throttling,
             dependencies: [
                 .boundedCache
             ]
         ),
         .testTarget(
-            name: .rateLimiter.tests,
+            name: .throttling.tests,
             dependencies: [
-                .rateLimiter
+                .throttling
             ]
         )
     ]

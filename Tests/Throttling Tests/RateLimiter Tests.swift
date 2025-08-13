@@ -1,5 +1,5 @@
 import Foundation
-@testable import RateLimiter
+@testable import Throttling
 import Testing
 
 @Suite("RateLimiter Tests")
