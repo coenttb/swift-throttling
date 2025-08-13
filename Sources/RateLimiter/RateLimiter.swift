@@ -110,9 +110,28 @@ public actor RateLimiter<Key: Hashable & Sendable> {
         /// The duration of the time window in seconds.
         let duration: TimeInterval
 
+        
+        
         /// The maximum number of attempts allowed within this window.
         let maxAttempts: Int
 
+        /// Creates a window configuration for a specified number of minutes.
+        ///
+        /// - Parameters:
+        ///   - seconds: The number of seconds for the window duration.
+        ///   - maxAttempts: The maximum attempts allowed in this window.
+        /// - Returns: A configured window for the specified duration.
+        ///
+        /// ## Example
+        ///
+        /// ```swift
+        /// // Allow 5 attempts per minute
+        /// let windowConfig = WindowConfig.seconds(1, maxAttempts: 5)
+        /// ```
+        public static func seconds(_ seconds: Int, maxAttempts: Int) -> WindowConfig {
+            WindowConfig(duration: TimeInterval(seconds), maxAttempts: maxAttempts)
+        }
+        
         /// Creates a window configuration for a specified number of minutes.
         ///
         /// - Parameters:
