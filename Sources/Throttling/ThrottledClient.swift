@@ -55,7 +55,7 @@ import Foundation
 ///     print("Rate limited. Retry after: \(result.retryAfter ?? 0) seconds")
 /// }
 /// ```
-public struct ThrottledClient<Key: Hashable & Sendable> {
+public struct ThrottledClient<Key: Hashable & Sendable>: Sendable {
     
     /// The result of acquiring permission to make a request.
     public struct AcquisitionResult: Sendable {
