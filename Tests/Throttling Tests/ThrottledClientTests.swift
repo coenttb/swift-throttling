@@ -93,24 +93,27 @@ struct ThrottledClientTests {
         
         let fixedTime = Date()
         
-        // Make a request
-        let result1 = await client.acquire("user1", timestamp: fixedTime)
-        #expect(result1.canProceed)
+        // Make requests to reach the limit
+        for _ in 1...5 {
+            let result = await client.acquire("user1", timestamp: fixedTime)
+            #expect(result.canProceed)
+        }
         
-        // Record failure
+        // Record failure when at limit
         await client.recordFailure("user1")
         
-        // Next request should be blocked due to backoff
+        // Next request should be blocked due to rate limit and backoff
         let result2 = await client.acquire("user1", timestamp: fixedTime)
-        #expect(!result2.canProceed, "Should be blocked by backoff")
+        #expect(!result2.canProceed, "Should be blocked by rate limit and backoff")
         #expect(result2.retryAfter != nil)
         
         // Record success to clear backoff
         await client.recordSuccess("user1")
         
-        // Should be allowed again (still within rate limit)
+        // Should still be blocked by rate limit (5 of 5 attempts used) but no backoff
         let result3 = await client.acquire("user1", timestamp: fixedTime.addingTimeInterval(0.1))
-        #expect(result3.canProceed, "Should be allowed after success")
+        #expect(!result3.canProceed, "Should still be blocked by rate limit")
+        #expect(result3.rateLimitResult?.backoffInterval == nil, "Backoff should be cleared")
     }
     
     @Test("Reset functionality")

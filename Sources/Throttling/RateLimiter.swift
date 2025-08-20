@@ -343,15 +343,17 @@ public actor RateLimiter<Key: Hashable & Sendable>: Sendable {
 
         let infos = getCurrentWindows(key: key, timestamp: timestamp)
 
-        // Check for consecutive failures first - apply backoff even if rate limit isn't exceeded
-        if let firstInfo = infos.first, firstInfo.consecutiveFailures > 0 {
+        // Check for consecutive failures with backoff only when rate limit is also exceeded
+        if let firstInfo = infos.first, 
+           firstInfo.consecutiveFailures > 0,
+           firstInfo.attempts >= windows[0].maxAttempts {
             let backoff = calculateBackoff(consecutiveFailures: firstInfo.consecutiveFailures)
             let nextWindow = firstInfo.windowStart.addingTimeInterval(windows[0].duration)
 
             let result = RateLimitResult(
                 isAllowed: false,
                 currentAttempts: firstInfo.attempts,
-                remainingAttempts: max(0, windows[0].maxAttempts - firstInfo.attempts),
+                remainingAttempts: 0,
                 nextAllowedAttempt: nextWindow,
                 backoffInterval: backoff
             )
@@ -365,7 +367,7 @@ public actor RateLimiter<Key: Hashable & Sendable>: Sendable {
             if info.attempts >= windowConfig.maxAttempts {
                 let nextWindow = info.windowStart.addingTimeInterval(windowConfig.duration)
 
-                let backoff = calculateBackoff(consecutiveFailures: info.consecutiveFailures)
+                let backoff = info.consecutiveFailures > 0 ? calculateBackoff(consecutiveFailures: info.consecutiveFailures) : nil
 
                 let result = RateLimitResult(
                     isAllowed: false,

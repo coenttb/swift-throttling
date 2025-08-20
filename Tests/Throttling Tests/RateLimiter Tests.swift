@@ -81,16 +81,18 @@ struct RateLimiterTests {
                 backoffMultiplier: 2.0
             )
 
-            // Make some attempts
+            // Make attempts to reach the limit
+            _ = await rateLimiter.checkLimit("user1")
+            await rateLimiter.recordAttempt("user1")
             _ = await rateLimiter.checkLimit("user1")
             await rateLimiter.recordAttempt("user1")
             _ = await rateLimiter.checkLimit("user1")
             await rateLimiter.recordAttempt("user1")
 
-            // Record a failure
+            // Record a failure when at limit
             await rateLimiter.recordFailure("user1")
 
-            // Check that backoff is calculated
+            // Check that backoff is calculated when at limit with failures
             let result = await rateLimiter.checkLimit("user1")
             #expect(!result.isAllowed)
             #expect(result.backoffInterval != nil)
@@ -325,18 +327,18 @@ struct RateLimiterTests {
             backoffMultiplier: 2.0
         )
 
-        // Make some attempts
-        _ = await rateLimiter.checkLimit("user1")
-        await rateLimiter.recordAttempt("user1")
-        _ = await rateLimiter.checkLimit("user1")
-        await rateLimiter.recordAttempt("user1")
+        // Make attempts to reach the limit
+        for _ in 1...5 {
+            _ = await rateLimiter.checkLimit("user1")
+            await rateLimiter.recordAttempt("user1")
+        }
 
         // Failure -> Success -> Failure pattern
         await rateLimiter.recordFailure("user1")
         await rateLimiter.recordSuccess("user1") // Should reset consecutive failures to 0
         await rateLimiter.recordFailure("user1") // Now 1 consecutive failure again
 
-        // Should be blocked due to backoff (security-first: any consecutive failure triggers backoff)
+        // Should be blocked due to rate limit and have backoff
         let result = await rateLimiter.checkLimit("user1")
         #expect(!result.isAllowed)
         #expect(result.backoffInterval != nil)
