@@ -193,6 +193,9 @@ public actor RequestPacer<Key: Hashable & Sendable>: Sendable {
                     rateLimitInfo: rateLimitResult
                 )
             }
+            
+            // Record the attempt since it's allowed
+            await rateLimiter.recordAttempt(key, timestamp: timestamp)
         } else {
             rateLimitResult = nil
         }

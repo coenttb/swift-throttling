@@ -167,6 +167,9 @@ public struct ThrottledClient<Key: Hashable & Sendable>: Sendable {
                     pacingResult: nil
                 )
             }
+            
+            // Record the attempt since it's allowed
+            await rateLimiter.recordAttempt(key, timestamp: timestamp)
         } else {
             rateLimitResult = nil
         }

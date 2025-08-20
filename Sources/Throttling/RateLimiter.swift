@@ -332,7 +332,8 @@ public actor RateLimiter<Key: Hashable & Sendable>: Sendable {
     /// }
     /// ```
     ///
-    /// - Note: This method automatically increments the attempt count for the key if the request is allowed.
+    /// - Note: This method is read-only and does not increment attempt counts.
+    ///         Call ``recordAttempt(_:)`` after checking but before performing the operation.
     ///         For failed requests, call ``recordFailure(_:)`` to trigger backoff penalties.
     public func checkLimit(
         _ key: Key,
@@ -380,22 +381,53 @@ public actor RateLimiter<Key: Hashable & Sendable>: Sendable {
             }
         }
 
-        var updatedInfos = infos
-        for i in 0..<updatedInfos.count {
-            updatedInfos[i].attempts += 1
-        }
-        attemptsByKey.insert(updatedInfos, forKey: key)
-
         let result = RateLimitResult(
             isAllowed: true,
-            currentAttempts: infos[0].attempts + 1,
-            remainingAttempts: windows[0].maxAttempts - (infos[0].attempts + 1),
+            currentAttempts: infos[0].attempts,
+            remainingAttempts: windows[0].maxAttempts - infos[0].attempts,
             nextAllowedAttempt: nil,
             backoffInterval: nil
         )
 
         await metricsCallback?(key, result)
         return result
+    }
+
+    /// Records an actual attempt for the specified key, incrementing the attempt count.
+    /// 
+    /// Call this method AFTER checking the rate limit and BEFORE attempting the operation.
+    /// This separates the checking phase from the recording phase, preventing double-counting.
+    ///
+    /// - Parameter key: The unique identifier for which to record the attempt.
+    ///
+    /// ## Usage Pattern
+    ///
+    /// ```swift
+    /// // First, check if allowed
+    /// let result = await rateLimiter.checkLimit("user123")
+    /// 
+    /// if result.isAllowed {
+    ///     // Record that we're making an attempt
+    ///     await rateLimiter.recordAttempt("user123")
+    ///     
+    ///     // Now perform the actual operation
+    ///     let success = await performOperation()
+    ///     
+    ///     if success {
+    ///         await rateLimiter.recordSuccess("user123")
+    ///     } else {
+    ///         await rateLimiter.recordFailure("user123")
+    ///     }
+    /// }
+    /// ```
+    public func recordAttempt(_ key: Key, timestamp: Date = Date()) async {
+        await cleanup(before: timestamp)
+
+        var infos = getCurrentWindows(key: key, timestamp: timestamp)
+        for i in 0..<infos.count {
+            infos[i].attempts += 1
+        }
+        attemptsByKey.insert(infos, forKey: key)
     }
 
     /// Records a failed operation for the specified key, incrementing consecutive failure count.

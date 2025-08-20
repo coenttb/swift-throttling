@@ -14,13 +14,15 @@ struct RateLimiterTests {
 
         let result1 = await rateLimiter.checkLimit("user1")
         #expect(result1.isAllowed)
-        #expect(result1.currentAttempts == 1)
-        #expect(result1.remainingAttempts == 1)
+        #expect(result1.currentAttempts == 0)
+        #expect(result1.remainingAttempts == 2)
+        await rateLimiter.recordAttempt("user1")
 
         let result2 = await rateLimiter.checkLimit("user1")
         #expect(result2.isAllowed)
-        #expect(result2.currentAttempts == 2)
-        #expect(result2.remainingAttempts == 0)
+        #expect(result2.currentAttempts == 1)
+        #expect(result2.remainingAttempts == 1)
+        await rateLimiter.recordAttempt("user1")
 
         let result3 = await rateLimiter.checkLimit("user1")
         #expect(!result3.isAllowed)
@@ -42,6 +44,7 @@ struct RateLimiterTests {
         for i in 1...3 {
             let result = await rateLimiter.checkLimit("user1")
             #expect(result.isAllowed, "Attempt \(i) should be allowed")
+            await rateLimiter.recordAttempt("user1")
         }
 
         // 4th attempt should be blocked by 1-minute window
@@ -57,9 +60,11 @@ struct RateLimiterTests {
 
             let result1 = await rateLimiter.checkLimit("user1")
             #expect(result1.isAllowed)
+            await rateLimiter.recordAttempt("user1")
 
             let result2 = await rateLimiter.checkLimit("user2")
             #expect(result2.isAllowed)
+            await rateLimiter.recordAttempt("user2")
 
             // Both users should be at their limit now
             let result3 = await rateLimiter.checkLimit("user1")
@@ -78,7 +83,9 @@ struct RateLimiterTests {
 
             // Make some attempts
             _ = await rateLimiter.checkLimit("user1")
+            await rateLimiter.recordAttempt("user1")
             _ = await rateLimiter.checkLimit("user1")
+            await rateLimiter.recordAttempt("user1")
 
             // Record a failure
             await rateLimiter.recordFailure("user1")
@@ -100,6 +107,7 @@ struct RateLimiterTests {
 
             // Exhaust the limit
             _ = await rateLimiter.checkLimit("user1")
+            await rateLimiter.recordAttempt("user1")
             let result1 = await rateLimiter.checkLimit("user1")
             #expect(!result1.isAllowed)
 
@@ -134,6 +142,7 @@ struct RateLimiterTests {
             )
 
             _ = await rateLimiter.checkLimit("user1")
+            await rateLimiter.recordAttempt("user1")
             _ = await rateLimiter.checkLimit("user1")
 
             #expect(capturedResults.count == 2)
@@ -158,6 +167,7 @@ struct RateLimiterTests {
             for i in 1...5 {
                 let result = await rateLimiter.checkLimit("user1")
                 #expect(result.isAllowed, "Attempt \(i) should be allowed")
+                await rateLimiter.recordAttempt("user1")
             }
 
             let result6 = await rateLimiter.checkLimit("user1")
@@ -173,6 +183,7 @@ struct RateLimiterTests {
 
             // Exhaust limit
             _ = await rateLimiter.checkLimit("user1")
+            await rateLimiter.recordAttempt("user1")
 
             // Record consecutive failures
             await rateLimiter.recordFailure("user1")
@@ -196,9 +207,11 @@ struct RateLimiterTests {
             // Make attempts at the fixed time
             let result1 = await rateLimiter.checkLimit("user1", timestamp: fixedDate)
             #expect(result1.isAllowed)
+            await rateLimiter.recordAttempt("user1", timestamp: fixedDate)
 
             let result2 = await rateLimiter.checkLimit("user1", timestamp: fixedDate)
             #expect(result2.isAllowed)
+            await rateLimiter.recordAttempt("user1", timestamp: fixedDate)
 
             // Third attempt should be blocked
             let result3 = await rateLimiter.checkLimit("user1", timestamp: fixedDate)
@@ -219,15 +232,18 @@ struct RateLimiterTests {
 
         // Fill cache with 2 keys
         _ = await rateLimiter.checkLimit("user1")
+        await rateLimiter.recordAttempt("user1")
         _ = await rateLimiter.checkLimit("user2")
+        await rateLimiter.recordAttempt("user2")
 
         // Add third key - should evict least recently used (user1)
         _ = await rateLimiter.checkLimit("user3")
+        await rateLimiter.recordAttempt("user3")
 
         // user1 should be evicted, so should be allowed again
         let result = await rateLimiter.checkLimit("user1")
         #expect(result.isAllowed)
-        #expect(result.currentAttempts == 1) // Fresh start since evicted
+        #expect(result.currentAttempts == 0) // Fresh start since evicted
     }
 
     @Test("Backoff reset after success")
@@ -238,7 +254,9 @@ struct RateLimiterTests {
 
         // Use up attempts
         _ = await rateLimiter.checkLimit("user1")
+        await rateLimiter.recordAttempt("user1")
         _ = await rateLimiter.checkLimit("user1")
+        await rateLimiter.recordAttempt("user1")
 
         // Record multiple failures
         await rateLimiter.recordFailure("user1")
@@ -264,11 +282,12 @@ struct RateLimiterTests {
             windows: [.minutes(1, maxAttempts: 5)]
         )
 
-        // Make multiple concurrent requests for same key
+        // With the new read-only checkLimit, concurrent checks all see the same state
+        // This test verifies that checkLimit is thread-safe and read-only
         await withTaskGroup(of: Bool.self) { group in
             var allowedCount = 0
 
-            // Launch 10 concurrent requests
+            // Launch 10 concurrent checks (without recording)
             for _ in 1...10 {
                 group.addTask {
                     let result = await rateLimiter.checkLimit("user1")
@@ -283,9 +302,20 @@ struct RateLimiterTests {
                 }
             }
 
-            // Should allow exactly 5 (the limit)
-            #expect(allowedCount == 5)
+            // All should be allowed since checkLimit is read-only
+            #expect(allowedCount == 10)
         }
+        
+        // Now test sequential recording
+        for i in 1...5 {
+            let result = await rateLimiter.checkLimit("user1")
+            #expect(result.isAllowed, "Attempt \(i) should be allowed")
+            await rateLimiter.recordAttempt("user1")
+        }
+        
+        // 6th attempt should be blocked
+        let result = await rateLimiter.checkLimit("user1")
+        #expect(!result.isAllowed)
     }
 
     @Test("Mixed success and failure patterns")
@@ -297,7 +327,9 @@ struct RateLimiterTests {
 
         // Make some attempts
         _ = await rateLimiter.checkLimit("user1")
+        await rateLimiter.recordAttempt("user1")
         _ = await rateLimiter.checkLimit("user1")
+        await rateLimiter.recordAttempt("user1")
 
         // Failure -> Success -> Failure pattern
         await rateLimiter.recordFailure("user1")
@@ -321,6 +353,7 @@ struct RateLimiterTests {
         let userId = UUID()
         let result1 = await uuidRateLimiter.checkLimit(userId)
         #expect(result1.isAllowed)
+        await uuidRateLimiter.recordAttempt(userId)
 
         let result2 = await uuidRateLimiter.checkLimit(userId)
         #expect(!result2.isAllowed)
@@ -332,6 +365,7 @@ struct RateLimiterTests {
 
         let result3 = await intRateLimiter.checkLimit(123)
         #expect(result3.isAllowed)
+        await intRateLimiter.recordAttempt(123)
 
         let result4 = await intRateLimiter.checkLimit(123)
         #expect(!result4.isAllowed)
@@ -350,6 +384,7 @@ struct RateLimiterTests {
         // Should work normally despite metrics callback
         let result1 = await rateLimiter.checkLimit("user1")
         #expect(result1.isAllowed)
+        await rateLimiter.recordAttempt("user1")
 
         let result2 = await rateLimiter.checkLimit("user1")
         #expect(!result2.isAllowed)
