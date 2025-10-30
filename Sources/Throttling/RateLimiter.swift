@@ -252,7 +252,7 @@ public actor RateLimiter<Key: Hashable & Sendable>: Sendable {
     private let maxCacheSize: Int
     private let backoffMultiplier: Double
     private var attemptsByKey: BoundedCache<Key, [AttemptInfo]>
-    private let metricsCallback: ((Key, RateLimitResult) async -> Void)?
+    private let metricsCallback: (@Sendable (Key, RateLimitResult) async -> Void)?
 
     /// Initializes a new rate limiter with the specified configuration.
     ///
@@ -285,7 +285,7 @@ public actor RateLimiter<Key: Hashable & Sendable>: Sendable {
         windows: [WindowConfig],
         maxCacheSize: Int = 10000,
         backoffMultiplier: Double = 2.0,
-        metricsCallback: ((Key, RateLimitResult) async -> Void)? = nil
+        metricsCallback: (@Sendable (Key, RateLimitResult) async -> Void)? = nil
     ) {
         self.windows = windows.sorted(by: { $0.duration < $1.duration })
         self.maxCacheSize = maxCacheSize

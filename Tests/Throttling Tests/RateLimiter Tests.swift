@@ -134,12 +134,24 @@ struct RateLimiterTests {
 
     @Test("Metrics callback functionality")
     func testMetricsCallback() async {
-            var capturedResults: [(String, RateLimiter<String>.RateLimitResult)] = []
+            actor ResultsCollector {
+                var results: [(String, RateLimiter<String>.RateLimitResult)] = []
+
+                func append(_ key: String, _ result: RateLimiter<String>.RateLimitResult) {
+                    results.append((key, result))
+                }
+
+                func getResults() -> [(String, RateLimiter<String>.RateLimitResult)] {
+                    results
+                }
+            }
+
+            let collector = ResultsCollector()
 
             let rateLimiter = RateLimiter<String>(
                 windows: [.minutes(1, maxAttempts: 1)],
                 metricsCallback: { key, result in
-                    capturedResults.append((key, result))
+                    await collector.append(key, result)
                 }
             )
 
@@ -147,6 +159,7 @@ struct RateLimiterTests {
             await rateLimiter.recordAttempt("user1")
             _ = await rateLimiter.checkLimit("user1")
 
+            let capturedResults = await collector.getResults()
             #expect(capturedResults.count == 2)
             #expect(capturedResults[0].0 == "user1")
             #expect(capturedResults[0].1.isAllowed)
