@@ -7,7 +7,7 @@ Actor-based rate limiting and request pacing for Swift.
 
 ## Overview
 
-swift-throttling provides thread-safe rate limiting and request pacing built with Swift's actor model. It supports multiple time windows, exponential backoff for failed attempts, and comprehensive metrics collection.
+swift-throttling provides thread-safe rate limiting and request pacing built with Swift's actor model. It supports multiple time windows, exponential backoff for failed attempts, and metrics collection.
 
 ## Features
 
@@ -100,7 +100,7 @@ if result.canProceed {
 
 ### Multiple Time Windows
 
-Layer different rate limits for comprehensive protection:
+Layer different rate limits for multi-layer protection:
 
 ```swift
 let apiLimiter = RateLimiter<String>(
