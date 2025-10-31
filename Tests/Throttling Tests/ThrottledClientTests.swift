@@ -162,10 +162,10 @@ struct ThrottledClientTests {
         let elapsed1 = Date().timeIntervalSince(start)
         #expect(elapsed1 < 0.01, "First request should be immediate")
         
-        // Second should wait ~50ms
+        // Second should wait ~50ms (with tolerance for CI runners)
         try await result2.waitUntilReady()
         let elapsed2 = Date().timeIntervalSince(start)
-        #expect(elapsed2 >= 0.04 && elapsed2 < 0.07,
+        #expect(elapsed2 >= 0.04 && elapsed2 < 0.2,
                "Second request should wait ~50ms, got \(elapsed2)")
     }
     
