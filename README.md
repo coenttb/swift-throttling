@@ -245,16 +245,16 @@ func reset(_ key: Key) async
 
 ## Requirements
 
-- Swift 6.0+
+- Swift 5.10+
 - Platforms: macOS, iOS, tvOS, watchOS, Linux, Windows
 
 ## Dependencies
 
-- [swift-bounded-cache](https://github.com/coenttb/swift-bounded-cache): Memory-efficient LRU cache implementation
+- [swift-bounded-cache](https://github.com/coenttb/swift-bounded-cache): A Swift package for high-performance LRU cache implementation.
 
 ## Related Packages
 
-- [swift-bounded-cache](https://github.com/coenttb/swift-bounded-cache): Memory-efficient LRU cache implementation
+- [swift-bounded-cache](https://github.com/coenttb/swift-bounded-cache): A Swift package for high-performance LRU cache implementation.
 
 ## Contributing
 
