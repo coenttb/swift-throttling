@@ -254,7 +254,14 @@ func reset(_ key: Key) async
 
 ## Related Packages
 
+### Dependencies
+
 - [swift-bounded-cache](https://github.com/coenttb/swift-bounded-cache): A Swift package for high-performance LRU cache implementation.
+
+### Used By
+
+- [coenttb-newsletter](https://github.com/coenttb/coenttb-newsletter): A Swift package for newsletter subscription and email management.
+- [swift-server-foundation](https://github.com/coenttb/swift-server-foundation): A Swift package with tools to simplify server development.
 
 ## Contributing
 
