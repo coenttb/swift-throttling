@@ -1,0 +1,9 @@
+# .github/metadata.yaml
+description: "Actor-based rate limiting and request pacing for Swift."
+topics:
+  - foundations
+  - throttling
+  - rate-limiting
+homepage: "https://swift-institute.org"
+readme:
+  family: E
