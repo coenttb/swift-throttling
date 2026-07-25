@@ -29,6 +29,17 @@ dependencies: [
 ]
 ```
 
+Add the product to your target:
+
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: [
+        .product(name: "Throttling", package: "swift-throttling")
+    ]
+)
+```
+
 ## Quick Start
 
 ### Basic Rate Limiting
