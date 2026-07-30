@@ -25,7 +25,7 @@ Add swift-throttling to your Swift package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/coenttb/swift-throttling", from: "0.0.1")
+    .package(url: "https://github.com/coenttb/swift-throttling", from: "0.3.3")
 ]
 ```
 
