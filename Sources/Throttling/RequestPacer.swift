@@ -76,9 +76,13 @@ public actor RequestPacer<Key: Hashable & Sendable> {
         /// This method will sleep until it's time for the request to proceed,
         /// ensuring proper pacing between requests.
         @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-        public func waitUntilReady() async throws {
+        public func waitUntilReady() async throws(CancellationError) {
             if delay > 0 {
-                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                do {
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                } catch {
+                    throw CancellationError()
+                }
             }
         }
     }

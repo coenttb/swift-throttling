@@ -84,9 +84,13 @@ public struct ThrottledClient<Key: Hashable & Sendable>: Sendable {
         ///
         /// - Throws: If the task is cancelled while waiting.
         @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-        public func waitUntilReady() async throws {
+        public func waitUntilReady() async throws(CancellationError) {
             guard canProceed, delay > 0 else { return }
-            try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            do {
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            } catch {
+                throw CancellationError()
+            }
         }
     }
 
@@ -150,7 +154,7 @@ public struct ThrottledClient<Key: Hashable & Sendable>: Sendable {
     ) async -> AcquisitionResult {
         // Check rate limits first
         let rateLimitResult: RateLimiter<Key>.RateLimitResult?
-        if let rateLimiter = rateLimiter {
+        if let rateLimiter {
             rateLimitResult = await rateLimiter.checkLimit(key, timestamp: timestamp)
 
             // If rate limited, return immediately
@@ -177,7 +181,7 @@ public struct ThrottledClient<Key: Hashable & Sendable>: Sendable {
 
         // Calculate pacing if configured
         let pacingResult: RequestPacer<Key>.ScheduleResult?
-        if let pacer = pacer {
+        if let pacer {
             pacingResult = await pacer.scheduleRequest(key, timestamp: timestamp)
 
             return AcquisitionResult(
