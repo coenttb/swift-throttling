@@ -2,14 +2,6 @@
 
 import PackageDescription
 
-extension String {
-    static let throttling: Self = "Throttling"
-}
-
-extension Target.Dependency {
-    static var throttling: Self { .target(name: .throttling) }
-}
-
 let package = Package(
     name: "swift-throttling",
     platforms: [
@@ -20,21 +12,20 @@ let package = Package(
         .visionOS("27")
     ],
     products: [
-        .library(name: .throttling, targets: [.throttling])
+        .library(name: "Throttling", targets: ["Throttling"])
     ],
     dependencies: [],
     targets: [
         .target(
-            name: .throttling,
+            name: "Throttling",
             dependencies: []
         ),
         .testTarget(
-            name: .throttling.tests,
+            name: "Throttling Tests",
             dependencies: [
-                .throttling
+                .target(name: "Throttling")
             ]
         )
     ]
 )
 
-extension String { var tests: Self { self + " Tests" } }
